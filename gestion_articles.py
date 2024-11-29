@@ -65,8 +65,8 @@ def ajouter_article(conn, nom, categorie=None, sous_categorie=None, description=
                 prix_vente_min, prix_vente_ht, prix_vente_ttc
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur,
-              ref_fournisseur, tva, prix_achat_ht, prix_moyen_pondere, marge_brute,
-              prix_vente_min, prix_vente_ht, prix_vente_ttc))
+              ref_fournisseur, tva, round(prix_achat_ht,3), round(prix_moyen_pondere,3), marge_brute,
+              round(prix_vente_min,3), round(prix_vente_ht,3), round(prix_vente_ttc,3)))
         conn.commit()
     except sqlite3.IntegrityError as e:
         print(f"Erreur d'intégrité (nom déjà utilisé) : {e}")
