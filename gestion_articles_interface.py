@@ -44,7 +44,7 @@ class GestionArticles:
             "prix_vente_ttc", "tva"]:
             self.article_table.heading(col, text=col.capitalize(),
                                         command=lambda c=col: self.afficher_articles_avec_tri(c))
-
+        self.configurer_tableau()
         self.afficher_articles()
 
     def ajouter_article(self):
@@ -61,6 +61,22 @@ class GestionArticles:
         ajouter_window = tk.Toplevel(self.root)
         AjouterModifierArticle(ajouter_window, refresh_table, mode="ajouter")
     
+    def configurer_tableau(self):
+        """
+        Configure les colonnes du tableau avec des alignements différents pour les valeurs numériques et textuelles.
+        """
+        numeric_columns = {"stock", "stock_minimum", "prix_achat_ht", "prix_moyen_pondere",
+                        "marge_brute", "prix_vente_ht", "prix_vente_ttc", "tva"}
+
+        for col in self.article_table["columns"]:
+            self.article_table.heading(col, text=col.replace("_", " ").capitalize())
+
+            if col in numeric_columns:
+                # Alignement à droite pour les valeurs numériques
+                self.article_table.column(col, anchor="e", width=100)
+            else:
+                # Alignement à gauche pour les textes
+                self.article_table.column(col, anchor="w", width=100)
     def afficher_articles_avec_tri(self, colonne):
         """
         Charge et affiche tous les articles triés par une colonne spécifique.
