@@ -163,8 +163,8 @@ class GestionArticles:
             conn = sqlite3.connect("appli.db")
             cursor = conn.cursor()
             query = f"""
-                SELECT id, nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur, ref_fournisseur, prix_achat_ht,
-                prix_moyen_pondere, marge_brute, prix_vente_ht,prix_vente_ttc, tva
+                SELECT id, nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur, ref_fournisseur,
+                    prix_achat_ht, prix_moyen_pondere, marge_brute, prix_vente_ht, prix_vente_ttc, tva
                 FROM articles
                 ORDER BY {self.colonne_tri} {self.ordre_tri}
             """
@@ -176,16 +176,25 @@ class GestionArticles:
             for row in self.article_table.get_children():
                 self.article_table.delete(row)
 
-             # Ajoute les nouveaux articles avec le signe '%' pour marge_brute
+            # Ajoute les nouveaux articles avec les champs arrondis et le signe '%'
             for article in articles:
-                article_list = list(article)  # Convertit le tuple en liste pour la modification
-                if article_list[11] is not None:  # Vérifie si marge_brute existe
-                    article_list[11] = f"{article_list[11]:.1f}%"  # Ajoute le signe % avec 3 décimales
+                article_list = list(article)  # Convertit le tuple en liste pour modification
+                # Arrondi des champs monétaires
+                if article_list[9] is not None:  # prix_achat_ht
+                    article_list[9] = f"{article_list[9]:.3f}"
+                if article_list[10] is not None:  # prix_moyen_pondere
+                    article_list[10] = f"{article_list[10]:.3f}"
+                if article_list[11] is not None:  # marge_brute
+                    article_list[11] = f"{article_list[11]:.1f}%"  # Affiche avec 1 décimale et %
+                if article_list[12] is not None:  # prix_vente_ht
+                    article_list[12] = f"{article_list[12]:.3f}"
+                if article_list[13] is not None:  # prix_vente_ttc
+                    article_list[13] = f"{article_list[13]:.3f}"
+                # Ajout au tableau
                 self.article_table.insert("", tk.END, values=article_list)
 
         except sqlite3.Error as e:
             messagebox.showerror("Erreur", f"Impossible de charger les articles : {e}")
-
 
 
 if __name__ == "__main__":

@@ -98,9 +98,9 @@ class AjouterModifierArticle:
             prix_vente_ht = float(self.fields["prix_vente_ht"].get())
             tva = float(self.fields["tva"].get())
 
-            self.prix_moyen_pondere.set(prix_achat_ht)
-            self.marge_brute.set(str((prix_vente_ht - prix_achat_ht)/prix_achat_ht*100)+ "%")
-            self.prix_vente_ttc.set(prix_vente_ht * (1 + tva / 100))
+            self.prix_moyen_pondere.set(f"{round(prix_achat_ht, 3):.3f}")
+            self.marge_brute.set(f"{round((prix_vente_ht - prix_achat_ht) / prix_achat_ht * 100, 3):.3f}%")
+            self.prix_vente_ttc.set(f"{round(prix_vente_ht * (1 + tva / 100), 3):.3f}")
         except ValueError:
             # Ignore les erreurs si les champs ne sont pas encore valides
             pass
@@ -118,9 +118,9 @@ class AjouterModifierArticle:
             # Collecte des données du formulaire
             article = {key: var.get() for key, var in self.fields.items()}
             article.update({
-                "prix_moyen_pondere": float(self.prix_moyen_pondere.get()) if self.prix_moyen_pondere.get() else 0.0,
-                "marge_brute": float(self.marge_brute.get().replace("%", ""))  if self.marge_brute.get() else 0.0,
-                "prix_vente_ttc": float(self.prix_vente_ttc.get()) if self.prix_vente_ttc.get() else 0.0
+                "prix_moyen_pondere": round(float(self.prix_moyen_pondere.get()), 3) if self.prix_moyen_pondere.get() else 0.0,
+                "marge_brute": round(float(self.marge_brute.get().replace("%", "")), 3) if self.marge_brute.get() else 0.0,
+                "prix_vente_ttc": round(float(self.prix_vente_ttc.get()), 3) if self.prix_vente_ttc.get() else 0.0
             })
 
             # Connexion à la base
@@ -131,15 +131,16 @@ class AjouterModifierArticle:
                 # Requête d'ajout
                 cursor.execute("""
                     INSERT INTO articles (nom, categorie, sous_categorie, description, stock, stock_minimum,
-                                          fournisseur, ref_fournisseur, prix_achat_ht, tva, prix_vente_ht,
-                                          prix_moyen_pondere, marge_brute, prix_vente_ttc)
+                                        fournisseur, ref_fournisseur, prix_achat_ht, tva, prix_vente_ht,
+                                        prix_moyen_pondere, marge_brute, prix_vente_ttc)
                     VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
                 """, (
                     article["nom"], article.get("categorie"), article.get("sous_categorie"), article.get("description"),
                     article.get("stock", 0), article.get("stock_minimum", 0), article.get("fournisseur"),
-                    article.get("ref_fournisseur"), article.get("prix_achat_ht", 0.0), article.get("tva", 0.0),
-                    article.get("prix_vente_ht", 0.0), article.get("prix_moyen_pondere", 0.0),
-                    article.get("marge_brute", 0.0), article.get("prix_vente_ttc", 0.0)
+                    article.get("ref_fournisseur"), round(article.get("prix_achat_ht", 0.0), 3),
+                    round(article.get("tva", 0.0), 3), round(article.get("prix_vente_ht", 0.0), 3),
+                    article.get("prix_moyen_pondere", 0.0), article.get("marge_brute", 0.0),
+                    article.get("prix_vente_ttc", 0.0)
                 ))
             else:
                 # Requête de modification
@@ -152,9 +153,10 @@ class AjouterModifierArticle:
                 """, (
                     article["nom"], article.get("categorie"), article.get("sous_categorie"), article.get("description"),
                     article.get("stock", 0), article.get("stock_minimum", 0), article.get("fournisseur"),
-                    article.get("ref_fournisseur"), article.get("prix_achat_ht", 0.0), article.get("tva", 0.0),
-                    article.get("prix_vente_ht", 0.0), article.get("prix_moyen_pondere", 0.0),
-                    article.get("marge_brute", 0.0), article.get("prix_vente_ttc", 0.0), self.article_data["id"]
+                    article.get("ref_fournisseur"), round(article.get("prix_achat_ht", 0.0), 3),
+                    round(article.get("tva", 0.0), 3), round(article.get("prix_vente_ht", 0.0), 3),
+                    article.get("prix_moyen_pondere", 0.0), article.get("marge_brute", 0.0),
+                    article.get("prix_vente_ttc", 0.0), self.article_data["id"]
                 ))
 
             # Sauvegarder et fermer
@@ -163,7 +165,6 @@ class AjouterModifierArticle:
             messagebox.showinfo("Succès", "Article sauvegardé avec succès.")
             self.on_article_saved()
             self.root.destroy()
-
 
         except sqlite3.Error as e:
             messagebox.showerror("Erreur", f"Impossible de sauvegarder l'article : {e}")

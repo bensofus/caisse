@@ -36,14 +36,16 @@ def calculer_prix_vente_ttc(prix_vente_ht, tva):
     """
     Calcule le prix de vente TTC.
     """
-    return round(prix_vente_ht * (1 + tva / 100),3)
+    return round(prix_vente_ht * (1 + tva / 100), 3)
 
 
-def calculer_marge_brute(prix_vente_ht, prix_moyen_pondere):
+def calculer_marge_brute(prix_vente_ht, prix_achat_ht):
     """
     Calcule la marge brute.
     """
-    return round(((prix_vente_ht - prix_achat_ht)/prix_achat_ht*100)),3)
+    if prix_achat_ht == 0:
+        return 0.0
+    return round(((prix_vente_ht - prix_achat_ht) / prix_achat_ht * 100), 3)
 
 
 def ajouter_article(conn, nom, categorie=None, sous_categorie=None, description=None, stock=0,
@@ -53,6 +55,9 @@ def ajouter_article(conn, nom, categorie=None, sous_categorie=None, description=
     Ajoute un article avec les calculs automatisés pour les champs dérivés.
     """
     try:
+        prix_achat_ht = round(prix_achat_ht, 3)
+        prix_vente_ht = round(prix_vente_ht, 3)
+        tva = round(tva, 3)
         prix_vente_ttc = calculer_prix_vente_ttc(prix_vente_ht, tva)
         marge_brute = calculer_marge_brute(prix_vente_ht, prix_achat_ht)
         prix_moyen_pondere = prix_achat_ht
@@ -65,8 +70,8 @@ def ajouter_article(conn, nom, categorie=None, sous_categorie=None, description=
                 prix_vente_min, prix_vente_ht, prix_vente_ttc
             ) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
         """, (nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur,
-              ref_fournisseur, tva, round(prix_achat_ht,3), round(prix_moyen_pondere,3), marge_brute,
-              round(prix_vente_min,3), round(prix_vente_ht,3), round(prix_vente_ttc,3)))
+              ref_fournisseur, tva, prix_achat_ht, prix_moyen_pondere, marge_brute,
+              round(prix_vente_min, 3), prix_vente_ht, prix_vente_ttc))
         conn.commit()
     except sqlite3.IntegrityError as e:
         print(f"Erreur d'intégrité (nom déjà utilisé) : {e}")
@@ -79,6 +84,14 @@ def modifier_article(conn, id, **kwargs):
     Modifie les champs d'un article et met à jour les calculs automatisés si nécessaire.
     """
     try:
+        # Arrondir les valeurs monétaires si elles sont fournies
+        if "prix_achat_ht" in kwargs and kwargs["prix_achat_ht"] is not None:
+            kwargs["prix_achat_ht"] = round(kwargs["prix_achat_ht"], 3)
+        if "prix_vente_ht" in kwargs and kwargs["prix_vente_ht"] is not None:
+            kwargs["prix_vente_ht"] = round(kwargs["prix_vente_ht"], 3)
+        if "tva" in kwargs and kwargs["tva"] is not None:
+            kwargs["tva"] = round(kwargs["tva"], 3)
+
         fields = {
             "nom": kwargs.get("nom"),
             "categorie": kwargs.get("categorie"),
@@ -118,41 +131,3 @@ def modifier_article(conn, id, **kwargs):
         conn.commit()
     except sqlite3.Error as e:
         print(f"Erreur lors de la modification de l'article : {e}")
-
-
-def supprimer_article(conn, id):
-    """
-    Supprime un article de la base de données.
-    """
-    try:
-        cursor = conn.cursor()
-        cursor.execute("DELETE FROM articles WHERE id = ?", (id,))
-        conn.commit()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la suppression de l'article : {e}")
-
-
-def rechercher_article(conn, critere, valeur):
-    """
-    Recherche un article par critère (exemple : nom, catégorie, fournisseur).
-    """
-    try:
-        cursor = conn.cursor()
-        cursor.execute(f"SELECT * FROM articles WHERE {critere} = ?", (valeur,))
-        return cursor.fetchall()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la recherche d'article : {e}")
-        return []
-
-
-def verifier_stock(conn):
-    """
-    Retourne les articles ayant un stock inférieur au stock minimum.
-    """
-    try:
-        cursor = conn.cursor()
-        cursor.execute("SELECT * FROM articles WHERE stock < stock_minimum")
-        return cursor.fetchall()
-    except sqlite3.Error as e:
-        print(f"Erreur lors de la vérification du stock : {e}")
-        return []
