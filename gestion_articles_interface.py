@@ -25,6 +25,22 @@ class GestionArticles:
 
         self.article_table.pack(side=tk.TOP, fill=tk.BOTH, expand=True)
 
+        # Variable pour inclure les articles supprimés
+        self.inclure_supprimes = tk.IntVar(value=0)
+
+        # Frame pour les options supplémentaires
+        options_frame = tk.Frame(self.root, pady=5)
+        options_frame.pack(side=tk.TOP, fill=tk.X)
+
+        # Case à cocher pour inclure les articles supprimés
+        tk.Checkbutton(
+            options_frame,
+            text="Inclure les articles supprimés",
+            variable=self.inclure_supprimes,
+            command=self.afficher_articles
+        ).pack(side=tk.LEFT, padx=10)
+
+
         # Frame pour les boutons
         button_frame = tk.Frame(self.root, pady=10)
         button_frame.pack(side=tk.BOTTOM, fill=tk.X)
@@ -127,16 +143,28 @@ class GestionArticles:
 
     def supprimer_article(self):
         """
-        Supprimer un article sélectionné.
+        Marque un article comme supprimé au lieu de le supprimer physiquement.
         """
         selected = self.article_table.focus()
         if not selected:
             messagebox.showwarning("Supprimer", "Veuillez sélectionner un article.")
             return
+
         confirm = messagebox.askyesno("Supprimer", "Êtes-vous sûr de vouloir supprimer cet article ?")
         if confirm:
-            # Placeholder pour la suppression
-            messagebox.showinfo("Supprimer", "Fonctionnalité Supprimer un article à implémenter.")
+            item_values = self.article_table.item(selected, "values")
+            article_id = item_values[0]  # Récupère l'ID de l'article
+            try:
+                conn = sqlite3.connect("appli.db")
+                cursor = conn.cursor()
+                cursor.execute("UPDATE articles SET etat = 1 WHERE id = ?", (article_id,))
+                conn.commit()
+                conn.close()
+                messagebox.showinfo("Succès", "L'article a été marqué comme supprimé.")
+                self.afficher_articles()  # Actualise le tableau
+            except sqlite3.Error as e:
+                messagebox.showerror("Erreur", f"Impossible de supprimer l'article : {e}")
+
 
     def rechercher_article(self):
         """
@@ -173,40 +201,57 @@ class GestionArticles:
     def afficher_articles(self):
         """
         Charge et affiche tous les articles depuis la base de données dans le tableau.
+        Inclut un filtre pour afficher ou exclure les articles marqués comme supprimés.
         """
         try:
             # Connexion à la base de données
             conn = sqlite3.connect("appli.db")
             cursor = conn.cursor()
-            query = f"""
-                SELECT id, nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur, ref_fournisseur,
-                    prix_achat_ht, prix_moyen_pondere, marge_brute, prix_vente_ht, prix_vente_ttc, tva
-                FROM articles
-                ORDER BY {self.colonne_tri} {self.ordre_tri}
-            """
+
+            # Construire la requête SQL en fonction de la case à cocher "inclure_supprimes"
+            if self.inclure_supprimes.get() == 1:
+                query = f"""
+                    SELECT id, nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur, 
+                        ref_fournisseur, prix_achat_ht, prix_moyen_pondere, marge_brute, prix_vente_ht, 
+                        prix_vente_ttc, tva
+                    FROM articles
+                    ORDER BY {self.colonne_tri} {self.ordre_tri}
+                """
+            else:
+                query = f"""
+                    SELECT id, nom, categorie, sous_categorie, description, stock, stock_minimum, fournisseur, 
+                        ref_fournisseur, prix_achat_ht, prix_moyen_pondere, marge_brute, prix_vente_ht, 
+                        prix_vente_ttc, tva
+                    FROM articles
+                    WHERE etat = 0
+                    ORDER BY {self.colonne_tri} {self.ordre_tri}
+                """
+
+            # Exécuter la requête et récupérer les résultats
             cursor.execute(query)
             articles = cursor.fetchall()
             conn.close()
 
-            # Efface le tableau existant
+            # Effacer les lignes existantes dans le tableau
             for row in self.article_table.get_children():
                 self.article_table.delete(row)
 
-            # Ajoute les nouveaux articles avec les champs arrondis et le signe '%'
+            # Ajouter les articles dans le tableau avec les formats appropriés
             for article in articles:
-                article_list = list(article)  # Convertit le tuple en liste pour modification
-                # Arrondi des champs monétaires
+                article_list = list(article)  # Convertir en liste pour modification
+                # Arrondi des champs numériques et ajout du signe '%' pour marge_brute
                 if article_list[9] is not None:  # prix_achat_ht
                     article_list[9] = f"{article_list[9]:.3f}"
                 if article_list[10] is not None:  # prix_moyen_pondere
                     article_list[10] = f"{article_list[10]:.3f}"
                 if article_list[11] is not None:  # marge_brute
-                    article_list[11] = f"{article_list[11]:.1f}%"  # Affiche avec 1 décimale et %
+                    article_list[11] = f"{article_list[11]:.1f}%"
                 if article_list[12] is not None:  # prix_vente_ht
                     article_list[12] = f"{article_list[12]:.3f}"
                 if article_list[13] is not None:  # prix_vente_ttc
                     article_list[13] = f"{article_list[13]:.3f}"
-                # Ajout au tableau
+                
+                # Insérer les données dans le tableau
                 self.article_table.insert("", tk.END, values=article_list)
 
         except sqlite3.Error as e:

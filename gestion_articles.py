@@ -3,7 +3,7 @@ import sqlite3
 
 def initialiser_articles(conn):
     """
-    Initialise la table articles si elle n'existe pas.
+    Initialise la table articles si elle n'existe pas et ajoute une colonne 'etat'.
     """
     try:
         cursor = conn.cursor()
@@ -24,12 +24,14 @@ def initialiser_articles(conn):
                 marge_brute REAL DEFAULT 0,
                 prix_vente_min REAL DEFAULT 0,
                 prix_vente_ht REAL DEFAULT 0,
-                prix_vente_ttc REAL DEFAULT 0
+                prix_vente_ttc REAL DEFAULT 0,
+                etat INTEGER DEFAULT 0  -- Ajout de la colonne état (0 = actif, 1 = supprimé)
             )
         """)
         conn.commit()
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation de la table articles : {e}")
+
 
 
 def calculer_prix_vente_ttc(prix_vente_ht, tva):
