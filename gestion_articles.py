@@ -32,6 +32,46 @@ def initialiser_articles(conn):
     except sqlite3.Error as e:
         print(f"Erreur lors de l'initialisation de la table articles : {e}")
 
+def ajouter_code_barre(conn, article_id, code_barre):
+    """
+    Ajoute un code-barre pour un article spécifique.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            INSERT INTO code_barres (article_id, code_barre)
+            VALUES (?, ?)
+        """, (article_id, code_barre))
+        conn.commit()
+    except sqlite3.IntegrityError:
+        raise ValueError("Le code-barre existe déjà.")
+    except sqlite3.Error as e:
+        raise sqlite3.Error(f"Erreur lors de l'ajout du code-barre : {e}")
+
+def supprimer_code_barre(conn, code_barre_id):
+    """
+    Supprime un code-barre par son ID.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("DELETE FROM code_barres WHERE id = ?", (code_barre_id,))
+        conn.commit()
+    except sqlite3.Error as e:
+        raise sqlite3.Error(f"Erreur lors de la suppression du code-barre : {e}")
+
+def recuperer_codes_barres(conn, article_id):
+    """
+    Récupère tous les codes-barres associés à un article.
+    """
+    try:
+        cursor = conn.cursor()
+        cursor.execute("""
+            SELECT id, code_barre FROM code_barres
+            WHERE article_id = ?
+        """, (article_id,))
+        return cursor.fetchall()
+    except sqlite3.Error as e:
+        raise sqlite3.Error(f"Erreur lors de la récupération des codes-barres : {e}")
 
 
 def calculer_prix_vente_ttc(prix_vente_ht, tva):

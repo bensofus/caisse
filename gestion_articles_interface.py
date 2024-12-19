@@ -81,7 +81,7 @@ class GestionArticles:
         """
         Configure les colonnes du tableau avec des alignements différents pour les valeurs numériques et textuelles.
         """
-        numeric_columns = {"stock", "stock_minimum", "prix_achat_ht", "prix_moyen_pondere",
+        numeric_columns = {"id","stock", "stock_minimum", "prix_achat_ht", "prix_moyen_pondere",
                         "marge_brute", "prix_vente_ht", "prix_vente_ttc", "tva"}
 
         for col in self.article_table["columns"]:
@@ -92,7 +92,7 @@ class GestionArticles:
                 self.article_table.column(col, anchor="e", width=100)
             else:
                 # Alignement à gauche pour les textes
-                self.article_table.column(col, anchor="w", width=100)
+                self.article_table.column(col, anchor="w", width=150)
     def afficher_articles_avec_tri(self, colonne):
         """
         Charge et affiche tous les articles triés par une colonne spécifique.
